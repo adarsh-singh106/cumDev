@@ -15,7 +15,7 @@ const PostDetails = () => {
 
     return (
         <div className="max-w-3xl mx-auto p-8">
-            <button onClick={() => navigate('/')} className="mb-4 text-blue-500">← Back</button>
+            <button onClick={() => navigate('/blog')} className="mb-4 text-blue-500">← Back</button>
             <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
             <img src={post.image} alt={post.title} className="w-full h-96 object-cover rounded-lg mb-8 shadow-md"/>
             <div className="prose lg:prose-xl text-gray-800 whitespace-pre-wrap">
