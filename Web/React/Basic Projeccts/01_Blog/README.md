@@ -2,7 +2,7 @@
 
 A modern, responsive frontend user interface for a blog application. Built using React (Vite) and styled with Tailwind CSS.
 
-### 🚀 **[View Live Demo](https://simple-react-blog-ui.vercel.app/blog)**
+### 🚀 **[View Live Demo](https://simple-react-blog-ui.vercel.app)**
 
 ## 📖 About The Project
 
