@@ -1,31 +1,32 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext"; 
 
 const Verify = () => {
   const { token } = useParams();
   const navigate = useNavigate();
-  
-  // Extract state and function from Context
-  // ✅ This will now work because we added verifyEmail to the Provider value
-  const { verifyEmail, state, dispatch } = useAuth(); // <--- Added dispatch here
+  const { verifyEmail, state, dispatch } = useAuth();
   const { verificationStatus, verificationMessage } = state;
 
-  // 1. Trigger Verification on Mount
+  const hasCalledAPI = useRef(false);
+
+  // 1. Trigger Verification
   useEffect(() => {
-    // Only verify if we have a token and we haven't started yet
-    if (token && verificationStatus === 'idle') {
+    // Only call if we have a token, it's idle, and we haven't called it yet
+    if (token && verificationStatus === 'idle' && !hasCalledAPI.current) {
+      hasCalledAPI.current = true;
       verifyEmail(token);
     }
 
-    // 🆕 CLEANUP: Reset status when leaving the page
-    // This ensures if the user comes back later, they start fresh
+    // Cleanup: Reset ONLY when the component unmounts (user leaves page)
     return () => {
-        dispatch({ type: "VERIFY_RESET" }); // We need to add this case to reducer (optional but recommended)
-        // OR simpler: you can dispatch a reset to 'idle' manually if you don't want a new case
-        // dispatch({ type: "VERIFY_START", payload: "idle" }); // Hacky way
+        dispatch({ type: "VERIFY_RESET" }); 
     };
-  }, [token]); // dependency array simplified
+
+    // 🛑 CRITICAL FIX: Dependencies are ONLY [token]
+    // We removed 'verifyEmail' and 'dispatch' to stop the infinite loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]); 
 
   // 2. Redirect on Success
   useEffect(() => {

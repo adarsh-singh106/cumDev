@@ -1,10 +1,9 @@
 const User = require("../model/User.model");
 const asyncHandler = require("express-async-handler");
-const generateToken = require('../utils/generateToken')
+const generateToken = require("../utils/generateToken");
 // for email verifation importing these
 const crypto = require("crypto"); // Built-in module for random string
 const sendEmail = require("../utils/sendEmail");
-
 
 // @desc    Register new user
 // @route   POST /api/users
@@ -37,7 +36,7 @@ const registerUser = asyncHandler(async (req, res) => {
     lastName,
     email,
     password,
-    verifyToken: verifyToken
+    verifyToken: verifyToken,
     // isVerified will default to false (from Schema)
     // verifyToken should be generated here if you plan to send an email, otherwise leave blank for now
   });
@@ -89,8 +88,8 @@ const loginUser = asyncHandler(async (req, res) => {
   if (user && (await user.matchPassword(password))) {
     // Check agar verified nahi hai to error feko
     if (!user.isVerified) {
-        res.status(401);
-        throw new Error("Please verify your email first.");
+      res.status(401);
+      throw new Error("Please verify your email first.");
     }
     res.json({
       _id: user.id,
@@ -107,22 +106,29 @@ const loginUser = asyncHandler(async (req, res) => {
 // @desc    Verify User Email via Token
 // @route   POST /api/users/verify
 const verifyUserEmail = asyncHandler(async (req, res) => {
-    const { token } = req.body; // Frontend se token aayega
+  const { token } = req.body; // Frontend se token aayega
 
-    // DB me dhundo kiska token match kar raha hai
-    const user = await User.findOne({ verifyToken: token });
+  // 👇 Debug Logs
+  console.log("1. Backend Received Token:", token);
 
-    if (!user) {
-        res.status(400);
-        throw new Error("Invalid or Expired Token");
-    }
+  // DB me dhundo kiska token match kar raha hai
+  const user = await User.findOne({ verifyToken: token });
 
-    // User mil gaya? Verify kar do!
-    user.isVerified = true;
-    user.verifyToken = undefined; // Token uda do, ab zaroorat nahi
-    await user.save();
+  console.log("2. Database Found User:", user ? user.email : "No User Found");
 
-    res.status(200).json({ message: "Email Verified Successfully! You can login now." });
+  if (!user) {
+    res.status(400);
+    throw new Error("Invalid or Expired Token");
+  }
+
+  // User mil gaya? Verify kar do!
+  user.isVerified = true;
+  user.verifyToken = undefined; // Token uda do, ab zaroorat nahi
+  await user.save();
+
+  res
+    .status(200)
+    .json({ message: "Email Verified Successfully! You can login now." });
 });
 
 // Don't forget to export it
