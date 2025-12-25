@@ -1,6 +1,6 @@
 import React, { createContext, useReducer, useContext } from "react";
 import axios from "axios";
-
+import toast from "react-hot-toast";
 // 1. Initial State
 const initialState = {
   signState: "SignUp",
@@ -142,12 +142,12 @@ export const AuthProvider = ({ children }) => {
       // 3. UX IMPROVEMENT:
       // If they just Registered, switch to "SignIn" mode automatically
       if (signState === "SignUp") {
-        alert("Account Created! Please Login.");
+        toast.success("Email Sent! Please check your email For Verification.");
         dispatch({ type: "SWITCH_MODE", payload: "SignIn" });
       } else {
         // If they just Logged In, they usually get redirected to Dashboard
         // (You handled this via navigate in the Component, or you can do it here)
-        alert("Logged In Successfully!");
+        toast.success("Logged In Successfully!");
       }
     } catch (error) {
       console.log(error);
