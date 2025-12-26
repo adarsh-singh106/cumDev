@@ -1,72 +1,90 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useAuth } from "../../context/Auth/AuthContext"; // Adjust path
+import { toast } from "react-hot-toast";
+// 🔧 CHANGE 1: Use toast instead of alert (better UX, non-blocking)
 
-// Import the separated components
+// Auth Components
 import SignInForm from "../../components/Auth/SignInForm";
 import SignUpForm from "../../components/Auth/SignUpForm";
-import ForgotPassword from "../../components/Auth/ForgotPassword";
 import VerifyEmail from "../../components/Auth/VerifyEmail";
+import ForgotPassword from "../../components/Auth/ForgotPassword";
+
+// 🔧 CHANGE 2: Centralized subView constants to avoid magic strings
+const SUB_VIEWS = {
+  DEFAULT: "default",
+  FORGOT: "forgot",
+  VERIFY: "verify",
+};
 
 const AuthPage = () => {
-  const { state, dispatch } = useAuth();
-  const { signState } = state;
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Local state to handle the sub-views (Forgot Password & Verify)
-  // Options: 'default', 'forgot', 'verify'
-  const [subView, setSubView] = useState("default");
+  // 🔧 CHANGE 3: Derive initial auth mode cleanly from URL
+  const [isSignUp, setIsSignUp] = useState(location.pathname === "/register");
 
-  const isSignUp = signState === "SignUp";
+  // 🔧 CHANGE 4: Use constants instead of raw strings
+  const [subView, setSubView] = useState(SUB_VIEWS.DEFAULT);
 
-  // Sync URL with Reducer State
+  // 🔧 CHANGE 5: Sync UI with URL changes (prevents stale states on refresh/back)
   useEffect(() => {
-    if (location.pathname === "/login") {
-      dispatch({ type: "SWITCH_MODE", payload: "SignIn" });
-      setSubView("default"); // Reset subview on route change
-    } else if (location.pathname === "/register") {
-      dispatch({ type: "SWITCH_MODE", payload: "SignUp" });
-      setSubView("default");
+    if (location.pathname === "/register") {
+      setIsSignUp(true);
+    } else {
+      setIsSignUp(false);
     }
-  }, [location.pathname, dispatch]);
 
+    // Always reset sub-view when route changes
+    setSubView(SUB_VIEWS.DEFAULT);
+  }, [location.pathname]);
+
+  // 🔧 CHANGE 6: Toggle only handles navigation (URL drives state)
   const handleToggle = () => {
-    // When toggling via the overlay, reset any sub-views
-    setSubView("default");
     navigate(isSignUp ? "/login" : "/register");
+  };
+
+  // 🔧 CHANGE 7: Extracted handlers for clarity + reuse
+  const handleRegisterSuccess = () => {
+    setSubView(SUB_VIEWS.VERIFY);
+  };
+
+  const handleVerifySuccess = () => {
+    toast.success("Email verified! Please login."); // better UX than alert
+    navigate("/login");
   };
 
   return (
     <div className="flex justify-center items-center flex-col h-screen bg-black font-sans text-white">
       <div className="relative overflow-hidden w-3xl max-w-full min-h-120 bg-gray-900 rounded-[20px] shadow-[0_14px_28px_rgba(0,0,0,0.5),0_10px_10px_rgba(0,0,0,0.5)]">
-        {/* --- SIGN UP CONTAINER (Right Side Logic) --- */}
+        {/* --- SIGN UP CONTAINER --- */}
         <div
           className={`absolute top-0 left-0 h-full w-1/2 flex flex-col justify-center items-center bg-gray-900 transition-all duration-500 ease-in-out
           ${isSignUp ? "translate-x-full opacity-100 z-50" : "opacity-0 z-10"}`}
         >
-          {/* Conditionally render Register Form OR Verify Email */}
-          {subView === "verify" ? (
-            <VerifyEmail onResend={() => alert("Code Resent!")} />
+          {subView === SUB_VIEWS.VERIFY ? (
+            <VerifyEmail
+              onVerifySuccess={handleVerifySuccess}
+              onResend={() => toast.success("Verification code resent")}
+              // 🔧 CHANGE 8: Replaced alert with toast
+            />
           ) : (
-            <SignUpForm onRegisterSuccess={() => setSubView("verify")} />
+            <SignUpForm onRegisterSuccess={handleRegisterSuccess} />
           )}
         </div>
 
-        {/* --- SIGN IN CONTAINER (Left Side Logic) --- */}
+        {/* --- SIGN IN CONTAINER --- */}
         <div
           className={`absolute top-0 left-0 h-full w-1/2 flex flex-col justify-center items-center bg-gray-900 z-20 transition-all duration-500 ease-in-out
           ${isSignUp ? "translate-x-full" : ""}`}
         >
-          {/* Conditionally render Login Form OR Forgot Password */}
-          {subView === "forgot" ? (
-            <ForgotPassword onBack={() => setSubView("default")} />
+          {subView === SUB_VIEWS.FORGOT ? (
+            <ForgotPassword onBack={() => setSubView(SUB_VIEWS.DEFAULT)} />
           ) : (
-            <SignInForm onForgotPassword={() => setSubView("forgot")} />
+            <SignInForm onForgotPassword={() => setSubView(SUB_VIEWS.FORGOT)} />
           )}
         </div>
 
-        {/* --- OVERLAY CONTAINER (The Sliding Panel) --- */}
+        {/* --- OVERLAY CONTAINER --- */}
         <div
           className={`absolute top-0 left-1/2 w-1/2 h-full overflow-hidden transition-transform duration-500 ease-in-out z-100 rounded-l-[50px]
           ${
@@ -77,7 +95,7 @@ const AuthPage = () => {
             className={`bg-linear-to-r from-[#3BB19B] to-[#20B2AA] text-white relative -left-full h-full w-[200%] transform transition-transform duration-500 ease-in-out
             ${isSignUp ? "translate-x-1/2" : "translate-x-0"}`}
           >
-            {/* Left Overlay Panel (Visible during Login) */}
+            {/* Left Overlay Panel */}
             <div
               className={`absolute top-0 flex flex-col items-center justify-center h-full w-1/2 px-10 text-center transform transition-transform duration-500 ease-in-out
               ${isSignUp ? "translate-x-0" : "-translate-x-[20%]"}`}
@@ -94,7 +112,7 @@ const AuthPage = () => {
               </button>
             </div>
 
-            {/* Right Overlay Panel (Visible during Register) */}
+            {/* Right Overlay Panel */}
             <div
               className={`absolute top-0 right-0 flex flex-col items-center justify-center h-full w-1/2 px-10 text-center transform transition-transform duration-500 ease-in-out
               ${isSignUp ? "translate-x-[20%]" : "translate-x-0"}`}
